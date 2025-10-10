@@ -3,12 +3,24 @@ import cors from "cors";
 import dotenv from "dotenv";
 import pool from "./db.js";
 import locationRoutes from "./routes/locationRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import householdRoutes from "./routes/householdRoutes.js";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // your frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
-app.use("/api", locationRoutes);
+app.use("/api/locations", locationRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api", householdRoutes);
 
 app.get("/", (req, res) => {
   res.send("Registration System API running...");
