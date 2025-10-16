@@ -1,0 +1,159 @@
+/* 🌍 Global Theme — Orchard Links Household Registration System */
+
+:root {
+  --bg: #f5f7fa;
+  --text: #2f3542;
+  --card-bg: #ffffff;
+  --label: #34495e;
+  --border: #ccc;
+  --accent: #0a3d62;
+  --accent-hover: #134d82;
+  --btn-secondary-bg: #f1f2f6;
+  --btn-secondary-text: #2f3542;
+  --btn-secondary-border: #dfe4ea;
+}
+
+[data-theme="dark"] {
+  --bg: #1e272e;
+  --text: #f5f6fa;
+  --card-bg: #2f3640;
+  --label: #dcdde1;
+  --border: #555;
+  --accent: #0097e6;
+  --accent-hover: #74b9ff;
+  --btn-secondary-bg: #3b3b3b;
+  --btn-secondary-text: #f5f6fa;
+  --btn-secondary-border: #555;
+}
+
+/* === Base === */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Inter", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* === Card === */
+.form-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
+  padding: 35px 45px;
+  max-width: 700px;
+  margin: 40px auto;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* === Titles === */
+h2.form-title {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 8px;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+/* === Labels === */
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--label);
+}
+
+/* === Inputs === */
+input,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+  margin-top: 5px;
+  margin-bottom: 14px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  background: var(--card-bg);
+  outline: none;
+  color: var(--text);
+}
+
+/* === Buttons === */
+button {
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.1s;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 24px;
+  width: 100%;
+  font-size: 16px;
+}
+
+button.primary:hover {
+  background: var(--accent-hover);
+}
+
+button.secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  padding: 8px 16px;
+  border: 1px solid var(--btn-secondary-border);
+  margin-top: 5px;
+}
+
+button.secondary:hover {
+  background: var(--btn-secondary-border);
+}
+
+.theme-toggle {
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+
+.theme-toggle:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.03);
+}
+
+
+/* === Checkbox Alignment === */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}

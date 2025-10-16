@@ -1,11 +1,13 @@
 import React, { useState } from "react";
+import "../styles/AppTheme.css";
+import { useEffect } from "react";
 
 const API = "http://localhost:5000/api/households";
 
-function HouseholdForm({ token }) {
+export default function HouseholdForm({ token }) {
   const locationContext = JSON.parse(localStorage.getItem("locationContext") || "{}");
-
   const [msg, setMsg] = useState("");
+  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     head_name: "",
     primary_phone: "",
@@ -28,173 +30,240 @@ function HouseholdForm({ token }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+    setErrors({ ...errors, [name]: "" });
   };
 
   const validate = () => {
-    if (!form.head_name.trim()) return "Head name is required.";
-    if (!/^[0-9]{9,12}$/.test(form.primary_phone))
-      return "Enter a valid phone number (9–12 digits).";
+    const errs = {};
+    const phoneRegex = /^0[7349]\d{8}$/;
+    if (!form.head_name.trim()) errs.head_name = "Head name is required.";
+    if (!phoneRegex.test(form.primary_phone))
+      errs.primary_phone = "Enter valid Ugandan phone (e.g. 0771234567).";
+    if (form.alternate_contact && !phoneRegex.test(form.alternate_contact))
+      errs.alternate_contact = "Alternate phone must be valid.";
     if (!form.gps_latitude || !form.gps_longitude)
-      return "GPS coordinates are required.";
+      errs.gps_latitude = "GPS coordinates required.";
     if (isNaN(form.land_size) || form.land_size <= 0)
-      return "Enter a valid positive land size.";
+      errs.land_size = "Enter valid land size.";
     if (isNaN(form.num_members) || form.num_members < 1)
-      return "Number of members must be at least 1.";
+      errs.num_members = "Members must be at least 1.";
+    if (!form.primary_income.trim())
+      errs.primary_income = "Primary income required.";
+    if (!form.water_source.trim())
+      errs.water_source = "Water source required.";
+    if (!form.payment_method)
+      errs.payment_method = "Select payment method.";
+    if (form.payment_method === "MobileMoney" && !phoneRegex.test(form.mobile_money_number))
+      errs.mobile_money_number = "Enter valid Mobile Money number.";
+    if (form.payment_method === "Bank") {
+      if (!form.bank_name.trim()) errs.bank_name = "Bank name required.";
+      if (!form.bank_account_number.trim()) errs.bank_account_number = "Account number required.";
+    }
     if (!form.agreed_to_credit_terms)
-      return "You must agree to credit terms before submitting.";
-    return null;
+      errs.agreed_to_credit_terms = "You must agree to credit terms.";
+    return errs;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const error = validate();
-    if (error) return alert(error);
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setMsg("");
+      return;
+    }
 
-    const body = {
-      ...form,
-      region_id: locationContext.region_id,
-      subregion_id: locationContext.subregion_id,
-      district_id: locationContext.district_id,
-      subcounty_id: locationContext.subcounty_id,
-      parish_id: locationContext.parish_id,
-      village_id: locationContext.village_id,
-      division_id: locationContext.division_id || null,
-      ward_id: locationContext.ward_id || null,
-      cellzone_id: locationContext.cellzone_id || null,
-    };
+    const body = { ...form, ...locationContext };
 
-    const res = await fetch(API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-    setMsg(data.message || data.error);
-
-    if (data.message) {
-      alert("✅ Household registered successfully!");
-      setForm({
-        head_name: "",
-        primary_phone: "",
-        alternate_contact: "",
-        gps_latitude: "",
-        gps_longitude: "",
-        land_size: "",
-        plot_characteristics: "",
-        num_members: "",
-        primary_income: "",
-        past_orchard_experience: false,
-        water_source: "",
-        payment_method: "",
-        mobile_money_number: "",
-        bank_name: "",
-        bank_account_number: "",
-        agreed_to_credit_terms: false,
+    try {
+      const res = await fetch(API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
       });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMsg("✅ Household registered successfully!");
+        setErrors({});
+        setForm({
+          head_name: "",
+          primary_phone: "",
+          alternate_contact: "",
+          gps_latitude: "",
+          gps_longitude: "",
+          land_size: "",
+          plot_characteristics: "",
+          num_members: "",
+          primary_income: "",
+          past_orchard_experience: false,
+          water_source: "",
+          payment_method: "",
+          mobile_money_number: "",
+          bank_name: "",
+          bank_account_number: "",
+          agreed_to_credit_terms: false,
+        });
+      } else setMsg(data.error || "Submission failed.");
+    } catch {
+      setMsg("⚠️ Network error. Try again later.");
     }
   };
 
-  const Label = ({ text, required, tip }) => (
-    <label title={tip} style={{ fontWeight: "bold" }}>
-      {text}
-      {required && <span style={{ color: "red" }}> *</span>}
-    </label>
-  );
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setForm((prev) => ({
+            ...prev,
+            gps_latitude: position.coords.latitude.toFixed(6),
+            gps_longitude: position.coords.longitude.toFixed(6),
+          }));
+        },
+        (error) => {
+          console.warn("GPS access denied or unavailable:", error.message);
+        }
+      );
+    } else {
+      console.warn("Geolocation not supported on this device.");
+    }
+  }, []);
+
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial", maxWidth: 650 }}>
-      <h2>🏠 Household Registration</h2>
+    <div className="form-card">
+
+      <h2 className="form-title">🏠 Household Registration</h2>
       <p>
         <strong>📍 Location:</strong>{" "}
         {locationContext.breadcrumb || "No location selected"}
       </p>
-      <hr />
+      <hr className="divider" />
+      {msg && <div className={msg.startsWith("✅") ? "success" : "warning"}>{msg}</div>}
 
       <form onSubmit={handleSubmit}>
-        <Label text="Head of Household" required /><br />
-        <input name="head_name" value={form.head_name} onChange={handleChange} required /><br /><br />
+        <label>Head of Household *</label>
+        <input name="head_name" value={form.head_name} onChange={handleChange} />
+        {errors.head_name && <small className="error">{errors.head_name}</small>}
 
-        <Label text="Primary Phone" required /><br />
-        <input name="primary_phone" value={form.primary_phone} onChange={handleChange} required /><br /><br />
+        <label>Primary Phone *</label>
+        <input name="primary_phone" value={form.primary_phone} onChange={handleChange} />
+        {errors.primary_phone && <small className="error">{errors.primary_phone}</small>}
 
-        <Label text="Alternate Contact" /><br />
-        <input name="alternate_contact" value={form.alternate_contact} onChange={handleChange} /><br /><br />
+        <label>Alternate Contact</label>
+        <input name="alternate_contact" value={form.alternate_contact} onChange={handleChange} />
+        {errors.alternate_contact && <small className="error">{errors.alternate_contact}</small>}
 
-        <Label text="GPS Latitude" required /><br />
-        <input name="gps_latitude" value={form.gps_latitude} onChange={handleChange} required /><br /><br />
+        <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ flex: 1 }}>
+            <label>GPS Latitude *</label>
+            <input name="gps_latitude" value={form.gps_latitude} onChange={handleChange} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label>GPS Longitude *</label>
+            <input name="gps_longitude" value={form.gps_longitude} onChange={handleChange} />
+          </div>
+        </div>
+        {errors.gps_latitude && <small className="error">{errors.gps_latitude}</small>}
 
-        <Label text="GPS Longitude" required /><br />
-        <input name="gps_longitude" value={form.gps_longitude} onChange={handleChange} required /><br /><br />
+        <label>Land Size (acres) *</label>
+        <input type="number" name="land_size" value={form.land_size} onChange={handleChange} />
+        {errors.land_size && <small className="error">{errors.land_size}</small>}
 
-        <Label text="Land Size (acres)" required /><br />
-        <input type="number" name="land_size" value={form.land_size} onChange={handleChange} required /><br /><br />
+        <label>Plot Characteristics *</label>
+        <select
+          name="plot_characteristics"
+          value={form.plot_characteristics}
+          onChange={handleChange}
+        >
+          <option value="">Select plot type</option>
+          <option value="Flat Land">Flat Land</option>
+          <option value="Gentle Slope">Gentle Slope</option>
+          <option value="Steep Slope">Steep Slope</option>
+          <option value="Valley / Wetland Edge">Valley / Wetland Edge</option>
+          <option value="Rocky Terrain">Rocky Terrain</option>
+          <option value="Clay Soil">Clay Soil</option>
+          <option value="Sandy Soil">Sandy Soil</option>
+          <option value="Loam Soil">Loam Soil</option>
+        </select>
 
-        <Label text="Plot Characteristics" /><br />
-        <input name="plot_characteristics" value={form.plot_characteristics} onChange={handleChange} /><br /><br />
 
-        <Label text="Number of Household Members" required /><br />
-        <input type="number" name="num_members" value={form.num_members} onChange={handleChange} required /><br /><br />
+        <label>Number of Household Members *</label>
+        <input type="number" name="num_members" value={form.num_members} onChange={handleChange} />
+        {errors.num_members && <small className="error">{errors.num_members}</small>}
 
-        <Label text="Primary Income Source" /><br />
-        <input name="primary_income" value={form.primary_income} onChange={handleChange} /><br /><br />
+        <label>Primary Income Source *</label>
+        <input name="primary_income" value={form.primary_income} onChange={handleChange} />
+        {errors.primary_income && <small className="error">{errors.primary_income}</small>}
 
-        <label>
+        <div className="checkbox-row">
+          <label>Has Past Orchard Experience</label>
           <input
             type="checkbox"
             name="past_orchard_experience"
             checked={form.past_orchard_experience}
             onChange={handleChange}
           />
-          &nbsp;Has Past Orchard Experience
-        </label><br /><br />
+        </div>
 
-        <Label text="Water Source" /><br />
-        <input name="water_source" value={form.water_source} onChange={handleChange} /><br /><br />
 
-        <Label text="Payment Method" /><br />
+        <label>Water Source *</label>
+        <input name="water_source" value={form.water_source} onChange={handleChange} />
+        {errors.water_source && <small className="error">{errors.water_source}</small>}
+
+        <label>Payment Method *</label>
         <select name="payment_method" value={form.payment_method} onChange={handleChange}>
           <option value="">Select</option>
           <option value="MobileMoney">Mobile Money</option>
           <option value="Bank">Bank</option>
-        </select><br /><br />
+        </select>
+        {errors.payment_method && <small className="error">{errors.payment_method}</small>}
 
         {form.payment_method === "MobileMoney" && (
           <>
-            <Label text="Mobile Money Number" /><br />
-            <input name="mobile_money_number" value={form.mobile_money_number} onChange={handleChange}/><br /><br />
+            <label>Mobile Money Number *</label>
+            <input name="mobile_money_number" value={form.mobile_money_number} onChange={handleChange} />
+            {errors.mobile_money_number && (
+              <small className="error">{errors.mobile_money_number}</small>
+            )}
           </>
         )}
 
         {form.payment_method === "Bank" && (
           <>
-            <Label text="Bank Name" /><br />
-            <input name="bank_name" value={form.bank_name} onChange={handleChange}/><br /><br />
-            <Label text="Account Number" /><br />
-            <input name="bank_account_number" value={form.bank_account_number} onChange={handleChange}/><br /><br />
+            <label>Bank Name *</label>
+            <input name="bank_name" value={form.bank_name} onChange={handleChange} />
+            {errors.bank_name && <small className="error">{errors.bank_name}</small>}
+
+            <label>Account Number *</label>
+            <input name="bank_account_number" value={form.bank_account_number} onChange={handleChange} />
+            {errors.bank_account_number && (
+              <small className="error">{errors.bank_account_number}</small>
+            )}
           </>
         )}
 
-        <label title="Must be checked before submission">
+        <div className="checkbox-row">
+          <label>I agree to credit terms</label>
           <input
             type="checkbox"
             name="agreed_to_credit_terms"
             checked={form.agreed_to_credit_terms}
             onChange={handleChange}
-            required
           />
-          &nbsp;I agree to credit terms
-        </label><br /><br />
+        </div>
 
-        <button type="submit">Submit</button>
+        {errors.agreed_to_credit_terms && (
+          <small className="error">{errors.agreed_to_credit_terms}</small>
+        )}
+
+        <button type="submit" className="primary">
+          Submit Household
+        </button>
       </form>
-
-      {msg && <p style={{ color: msg.includes("success") ? "green" : "red" }}>{msg}</p>}
     </div>
   );
 }
-
-export default HouseholdForm;

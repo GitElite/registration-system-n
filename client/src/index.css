@@ -12,3 +12,8 @@ label {
 h2 {
   color: #0073e6;
 }
+select:focus, button:hover {
+  border-color: #0a3d62;
+  background-color: #1e5d87;
+  color: #fff;
+}

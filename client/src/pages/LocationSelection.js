@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import "../styles/AppTheme.css";
 
 const API = "http://localhost:5000/api/locations";
 
@@ -52,7 +53,6 @@ export default function LocationSelection({ token, onProceed }) {
     setFinalName("");
   };
 
-  // Fetch entities (districts/cities/municipalities)
   const fetchEntities = async () => {
     if (!subregion || !entityType) return;
     setLoading(true);
@@ -65,12 +65,9 @@ export default function LocationSelection({ token, onProceed }) {
     setNextData({ entities: data });
   };
 
-  // Load next administrative level based on entity type
   const loadNextLevel = async () => {
     setLoading(true);
     let res;
-
-    // Rural
     if (entityType === "District") {
       res = await fetch(`${API}/subcounties?district_id=${entity}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -78,8 +75,6 @@ export default function LocationSelection({ token, onProceed }) {
       const subcounties = await res.json();
       setNextData({ ...nextData, subcounties });
     }
-
-    // City or Municipality
     if (entityType === "City" || entityType === "Municipality") {
       res = await fetch(`${API}/divisions?district_id=${entity}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -87,8 +82,6 @@ export default function LocationSelection({ token, onProceed }) {
       const divisions = await res.json();
       setNextData({ ...nextData, divisions });
     }
-
-    // Town Council
     if (entityType === "TownCouncil") {
       res = await fetch(
         `${API}/wards?parent_id=${entity}&parent_type=TownCouncil`,
@@ -97,41 +90,42 @@ export default function LocationSelection({ token, onProceed }) {
       const wards = await res.json();
       setNextData({ ...nextData, wards });
     }
-
     setLoading(false);
   };
 
   const confirm = () => {
-    const selectedRegion = regions.find(r => r.region_id === Number(region))?.name || "";
-    const selectedSubregion = subregions.find(s => s.subregion_id === Number(subregion))?.name || "";
-    const selectedEntity = nextData.entities?.find(e =>
-      e.district_id === Number(entity) ||
-      e.id === Number(entity)
-    )?.name || "";
-
-    // pick the final subdivision
+    const selectedRegion =
+      regions.find((r) => r.region_id === Number(region))?.name || "";
+    const selectedSubregion =
+      subregions.find((s) => s.subregion_id === Number(subregion))?.name || "";
+    const selectedEntity =
+      nextData.entities?.find(
+        (e) => e.district_id === Number(entity) || e.id === Number(entity)
+      )?.name || "";
     const selectedNextLevel =
-      nextData.subcounties?.find(s => s.subcounty_id === Number(entity))?.name ||
-      nextData.divisions?.find(d => d.division_id === Number(entity))?.name ||
-      nextData.wards?.find(w => w.ward_id === Number(entity))?.name ||
+      nextData.subcounties?.find((s) => s.subcounty_id === Number(entity))
+        ?.name ||
+      nextData.divisions?.find((d) => d.division_id === Number(entity))?.name ||
+      nextData.wards?.find((w) => w.ward_id === Number(entity))?.name ||
       finalName;
-
-    // join all into breadcrumb
     const breadcrumb = [
       selectedRegion,
       selectedSubregion,
       selectedEntity,
-      selectedNextLevel
-    ].filter(Boolean).join(" → ");
+      selectedNextLevel,
+    ]
+      .filter(Boolean)
+      .join(" → ");
 
     const context = {
       region_id: region,
       subregion_id: subregion,
       district_id: entityType === "District" ? entity : null,
-      division_id: entityType === "City" || entityType === "Municipality" ? entity : null,
+      division_id:
+        entityType === "City" || entityType === "Municipality" ? entity : null,
       ward_id: entityType === "TownCouncil" ? entity : null,
       finalName: selectedNextLevel,
-      breadcrumb
+      breadcrumb,
     };
 
     localStorage.setItem("locationContext", JSON.stringify(context));
@@ -140,10 +134,10 @@ export default function LocationSelection({ token, onProceed }) {
   };
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial" }}>
-      <h2>📍 Location Selection</h2>
+    <div className="form-card">
 
-      {/* REGION */}
+      <h2 className="form-title">📍 Location Selection</h2>
+
       <label>Region *</label>
       <select value={region} onChange={handleRegion}>
         <option value="">Select Region</option>
@@ -153,10 +147,7 @@ export default function LocationSelection({ token, onProceed }) {
           </option>
         ))}
       </select>
-      <br />
-      <br />
 
-      {/* SUBREGION */}
       {region && (
         <>
           <label>Subregion *</label>
@@ -171,12 +162,9 @@ export default function LocationSelection({ token, onProceed }) {
               </option>
             ))}
           </select>
-          <br />
-          <br />
         </>
       )}
 
-      {/* ENTITY TYPE */}
       {subregion && (
         <>
           <label>Entity Type *</label>
@@ -186,20 +174,15 @@ export default function LocationSelection({ token, onProceed }) {
               <option key={t}>{t}</option>
             ))}
           </select>
-          <br />
-          <br />
         </>
       )}
 
-      {/* LOAD ENTITIES */}
       {entityType && (
         <>
-          <button type="button" onClick={fetchEntities}>
-            Load {entityType}s
+          <button className="secondary" onClick={fetchEntities}>
+            {loading ? "Loading..." : `Load ${entityType}s`}
           </button>
-          <br />
-          <br />
-          {loading && <p>Loading...</p>}
+
           {nextData.entities && nextData.entities.length > 0 && (
             <>
               <label>{entityType} *</label>
@@ -214,28 +197,27 @@ export default function LocationSelection({ token, onProceed }) {
                   </option>
                 ))}
               </select>
-              <br />
-              <br />
-              <button onClick={loadNextLevel}>
-                Continue to {entityType === "District"
+
+              <button className="secondary" onClick={loadNextLevel}>
+                Continue to{" "}
+                {entityType === "District"
                   ? "Subcounties"
                   : entityType === "TownCouncil"
                   ? "Wards"
                   : "Divisions"}
               </button>
-              <br />
-              <br />
             </>
           )}
         </>
       )}
 
-      {/* RURAL FLOW */}
       {nextData.subcounties && (
         <>
           <label>Subcounty *</label>
           <select
-            onChange={(e) => setFinalName(e.target.options[e.target.selectedIndex].text)}
+            onChange={(e) =>
+              setFinalName(e.target.options[e.target.selectedIndex].text)
+            }
           >
             <option value="">Select Subcounty</option>
             {nextData.subcounties.map((s) => (
@@ -244,17 +226,16 @@ export default function LocationSelection({ token, onProceed }) {
               </option>
             ))}
           </select>
-          <br />
-          <br />
         </>
       )}
 
-      {/* URBAN FLOW (CITY/MUNICIPALITY) */}
       {nextData.divisions && (
         <>
           <label>Division *</label>
           <select
-            onChange={(e) => setFinalName(e.target.options[e.target.selectedIndex].text)}
+            onChange={(e) =>
+              setFinalName(e.target.options[e.target.selectedIndex].text)
+            }
           >
             <option value="">Select Division</option>
             {nextData.divisions.map((d) => (
@@ -263,17 +244,16 @@ export default function LocationSelection({ token, onProceed }) {
               </option>
             ))}
           </select>
-          <br />
-          <br />
         </>
       )}
 
-      {/* URBAN FLOW (TOWN COUNCIL) */}
       {nextData.wards && (
         <>
           <label>Ward *</label>
           <select
-            onChange={(e) => setFinalName(e.target.options[e.target.selectedIndex].text)}
+            onChange={(e) =>
+              setFinalName(e.target.options[e.target.selectedIndex].text)
+            }
           >
             <option value="">Select Ward</option>
             {nextData.wards.map((w) => (
@@ -282,16 +262,11 @@ export default function LocationSelection({ token, onProceed }) {
               </option>
             ))}
           </select>
-          <br />
-          <br />
         </>
       )}
 
       {finalName && (
-        <button
-          style={{ background: "green", color: "white" }}
-          onClick={confirm}
-        >
+        <button className="primary" onClick={confirm}>
           Register Households in {finalName}
         </button>
       )}

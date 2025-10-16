@@ -1,9 +1,26 @@
 -- ============================================================
--- UGANDA LOCATION SCHEMA + SEED (FULL CLEAN VERSION)
--- Region → Subregion → District → LC3 → LC4 → LC1
+-- SCHEMA: Uganda Location Hierarchy
+-- VERSION: v3.1 (Stable for Production & Dev)
+-- AUTHOR: Edwin (Orchard Links)
+-- DATE: 2025-10-14
+--
+-- STRUCTURE:
+--   Region → Subregion → District → LC3 (Subcounty/TownCouncil/Division)
+--   → LC4 (Parish/Ward) → LC1 (Village/Cell)
+--
+-- PURPOSE:
+--   Full schema + realistic seed for registration workflow testing.
+--   Supports entity_type filtering (District, City, Municipality, TownCouncil)
+--
+-- USE:
+--   psql -d obi_registration -f schema_and_seed_full.sql
 -- ============================================================
 
--- Drop old tables safely
+BEGIN;
+
+-- ============================================================
+-- DROP OLD TABLES (for clean rebuild)
+-- ============================================================
 DROP TABLE IF EXISTS admin_unit_lc1 CASCADE;
 DROP TABLE IF EXISTS admin_unit_lc4 CASCADE;
 DROP TABLE IF EXISTS admin_unit_lc3 CASCADE;
@@ -11,10 +28,11 @@ DROP TABLE IF EXISTS district CASCADE;
 DROP TABLE IF EXISTS subregion CASCADE;
 DROP TABLE IF EXISTS region CASCADE;
 
+DROP VIEW IF EXISTS subcounty, division, ward, parish, village, cellzone CASCADE;
+
 -- ============================================================
 -- TABLES
 -- ============================================================
-
 CREATE TABLE region (
   region_id SERIAL PRIMARY KEY,
   name TEXT UNIQUE NOT NULL
@@ -31,6 +49,7 @@ CREATE TABLE district (
   district_id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   subregion_id INT NOT NULL REFERENCES subregion(subregion_id) ON DELETE CASCADE,
+  type TEXT DEFAULT 'Rural', -- City, Municipality, TownCouncil, Rural
   UNIQUE(name, subregion_id)
 );
 
@@ -58,12 +77,65 @@ CREATE TABLE admin_unit_lc1 (
   UNIQUE(name, lc4_id)
 );
 
+
 -- ============================================================
--- CLEAN DUPLICATES (if any)
+-- LEGACY VIEW ALIASES (so old routes still work)
 -- ============================================================
-DELETE FROM region a
-USING region b
-WHERE a.region_id < b.region_id AND a.name = b.name;
+
+-- Subcounties (Rural LC3)
+CREATE OR REPLACE VIEW subcounty AS
+SELECT admin_unit_id AS subcounty_id,
+       name,
+       district_id,
+       unit_type
+FROM admin_unit_lc3
+WHERE unit_type = 'Subcounty';
+
+-- Divisions (City/Municipality LC3)
+CREATE OR REPLACE VIEW division AS
+SELECT admin_unit_id AS division_id,
+       name,
+       district_id,
+       unit_type
+FROM admin_unit_lc3
+WHERE unit_type = 'Division';
+
+-- Wards (City/Muni/TownCouncil LC4)
+CREATE OR REPLACE VIEW ward AS
+SELECT admin_unit_id AS ward_id,
+       name,
+       lc3_id AS parent_id,
+       unit_type
+FROM admin_unit_lc4
+WHERE unit_type = 'Ward';
+
+-- Parishes (Rural LC4)
+CREATE OR REPLACE VIEW parish AS
+SELECT admin_unit_id AS parish_id,
+       name,
+       lc3_id AS subcounty_id,
+       unit_type
+FROM admin_unit_lc4
+WHERE unit_type = 'Parish';
+
+-- Villages (Rural LC1)
+CREATE OR REPLACE VIEW village AS
+SELECT admin_unit_id AS village_id,
+       name,
+       lc4_id AS parish_id,
+       unit_type
+FROM admin_unit_lc1
+WHERE unit_type = 'Village';
+
+-- Cellzones (Urban LC1)
+CREATE OR REPLACE VIEW cellzone AS
+SELECT admin_unit_id AS cellzone_id,
+       name,
+       lc4_id AS ward_id,
+       unit_type
+FROM admin_unit_lc1
+WHERE unit_type = 'Cell';
+
 
 -- ============================================================
 -- SEED REGIONS
@@ -76,7 +148,7 @@ INSERT INTO region(name) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
--- SEED SUBREGIONS (CLEAN, FIXED VERSION)
+-- SEED SUBREGIONS (adds Buganda for Central)
 -- ============================================================
 INSERT INTO subregion(name, region_id)
 SELECT v.subregion_name, r.region_id
@@ -94,100 +166,133 @@ JOIN (
     ('Ankole', 'Western Region'),
     ('Kigezi', 'Western Region'),
     ('Tooro', 'Western Region'),
-    ('Bunyoro', 'Western Region')
+    ('Bunyoro', 'Western Region'),
+    ('Buganda', 'Central Region')
 ) AS v(subregion_name, region_name)
 ON r.name = v.region_name
 ON CONFLICT (name, region_id) DO NOTHING;
 
 -- ============================================================
--- SAMPLE DISTRICTS
+-- SEED DISTRICTS (covers every subregion)
 -- ============================================================
 INSERT INTO district(name, subregion_id)
 SELECT v.district_name, s.subregion_id
 FROM subregion s
 JOIN (
   VALUES
+    -- Northern
     ('Gulu', 'Acholi'),
     ('Kitgum', 'Acholi'),
     ('Pader', 'Acholi'),
     ('Amuru', 'Acholi'),
     ('Lira', 'Lango'),
     ('Apac', 'Lango'),
+    ('Arua', 'West Nile'),
+    ('Nebbi', 'West Nile'),
+    ('Zombo', 'West Nile'),
+    ('Moroto', 'Karamoja'),
+    ('Kotido', 'Karamoja'),
+
+    -- Eastern
     ('Soroti', 'Teso'),
     ('Kumi', 'Teso'),
     ('Mbale', 'Elgon'),
     ('Tororo', 'Bukedi'),
     ('Iganga', 'Busoga'),
+
+    -- Western
     ('Mbarara', 'Ankole'),
     ('Kabale', 'Kigezi'),
     ('Kabarole', 'Tooro'),
     ('Hoima', 'Bunyoro'),
-    ('Kampala', 'Central Region Placeholder') -- ensures 4-region coverage
+
+    -- Central
+    ('Kampala', 'Buganda'),
+    ('Wakiso', 'Buganda'),
+    ('Mukono', 'Buganda')
 ) AS v(district_name, subregion_name)
 ON s.name = v.subregion_name
 ON CONFLICT (name, subregion_id) DO NOTHING;
 
 -- ============================================================
--- SAMPLE LC3 (Subcounties/Town Councils/Divisions)
+-- TAG ENTITY TYPES (City / Municipality / TownCouncil)
 -- ============================================================
-INSERT INTO admin_unit_lc3(name, district_id)
-SELECT v.lc3_name, d.district_id
+UPDATE district SET type='City'
+WHERE name IN ('Kampala','Mbarara','Gulu','Arua','Mbale','Soroti');
+
+UPDATE district SET type='Municipality'
+WHERE name IN ('Hoima','Tororo','Lira');
+
+UPDATE district SET type='TownCouncil'
+WHERE name IN ('Apac','Kitgum','Nebbi');
+
+-- ============================================================
+-- UNIVERSAL MIN-SEED: ensures every dropdown has options
+-- (Rural + City + Municipality + TownCouncil)
+-- ============================================================
+
+-- 1️⃣ For every district, create 2 LC3 entries with correct unit_type
+INSERT INTO admin_unit_lc3 (name, unit_type, district_id)
+SELECT
+  CASE
+    WHEN d.type IN ('City','Municipality') THEN d.name || ' Division ' || gs.n
+    WHEN d.type = 'TownCouncil'            THEN d.name || ' Town Council ' || gs.n
+    ELSE                                         d.name || ' Subcounty ' || gs.n
+  END AS name,
+  CASE
+    WHEN d.type IN ('City','Municipality') THEN 'Division'
+    WHEN d.type = 'TownCouncil'            THEN 'TownCouncil'
+    ELSE                                         'Subcounty'
+  END AS unit_type,
+  d.district_id
 FROM district d
-JOIN (
-  VALUES
-    ('Awach', 'Gulu'),
-    ('Kitgum Matidi', 'Kitgum'),
-    ('Pader Town Council', 'Pader'),
-    ('Bibia', 'Amuru'),
-    ('Adekokwok', 'Lira'),
-    ('Apac Town Council', 'Apac'),
-    ('Arapai', 'Soroti'),
-    ('Atutur', 'Kumi'),
-    ('Bufumbo', 'Mbale'),
-    ('Malaba Town Council', 'Tororo'),
-    ('Nawandala', 'Iganga'),
-    ('Bubaare', 'Mbarara'),
-    ('Bukinda', 'Kabale'),
-    ('Buheesi', 'Kabarole'),
-    ('Bugambe', 'Hoima'),
-    ('Central Division', 'Kampala')
-) AS v(lc3_name, district_name)
-ON d.name = v.district_name
+CROSS JOIN generate_series(1,2) AS gs(n)
 ON CONFLICT (name, district_id) DO NOTHING;
 
--- ============================================================
--- SAMPLE LC4 (Parish/Ward)
--- ============================================================
-INSERT INTO admin_unit_lc4(name, unit_type, lc3_id)
-SELECT 'Bukinda Parish','Parish',a.admin_unit_id
-FROM admin_unit_lc3 a
-JOIN district d ON d.district_id=a.district_id
-WHERE d.name='Kabale'
-LIMIT 1
+-- 2️⃣ For every LC3, create 2 LC4 with correct unit_type
+INSERT INTO admin_unit_lc4 (name, unit_type, lc3_id)
+SELECT
+  CASE
+    WHEN lc3.unit_type IN ('Division','TownCouncil') THEN lc3.name || ' - Ward '   || gs.n
+    ELSE                                                   lc3.name || ' - Parish ' || gs.n
+  END AS name,
+  CASE
+    WHEN lc3.unit_type IN ('Division','TownCouncil') THEN 'Ward'
+    ELSE                                                   'Parish'
+  END AS unit_type,
+  lc3.admin_unit_id
+FROM admin_unit_lc3 lc3
+CROSS JOIN generate_series(1,2) AS gs(n)
 ON CONFLICT (name, lc3_id) DO NOTHING;
 
-INSERT INTO admin_unit_lc4(name, unit_type, lc3_id)
-SELECT 'Kabale Central Ward','Ward',a.admin_unit_id
-FROM admin_unit_lc3 a
-JOIN district d ON d.district_id=a.district_id
-WHERE d.name='Kabale'
-LIMIT 1
-ON CONFLICT (name, lc3_id) DO NOTHING;
-
--- ============================================================
--- SAMPLE LC1 (Village/Cell)
--- ============================================================
-INSERT INTO admin_unit_lc1(name, unit_type, lc4_id)
-SELECT 'Kanyankwanzi Village','Village',l.admin_unit_id
-FROM admin_unit_lc4 l WHERE l.name='Bukinda Parish'
+-- 3️⃣ For every LC4, create 2 LC1 with correct unit_type
+INSERT INTO admin_unit_lc1 (name, unit_type, lc4_id)
+SELECT
+  CASE
+    WHEN lc4.unit_type = 'Ward' THEN lc4.name || ' - Cell '    || gs.n
+    ELSE                           lc4.name || ' - Village '  || gs.n
+  END AS name,
+  CASE
+    WHEN lc4.unit_type = 'Ward' THEN 'Cell'
+    ELSE                           'Village'
+  END AS unit_type,
+  lc4.admin_unit_id
+FROM admin_unit_lc4 lc4
+CROSS JOIN generate_series(1,2) AS gs(n)
 ON CONFLICT (name, lc4_id) DO NOTHING;
 
-INSERT INTO admin_unit_lc1(name, unit_type, lc4_id)
-SELECT 'Rwakaraba Cell','Cell',l.admin_unit_id
-FROM admin_unit_lc4 l WHERE l.name='Kabale Central Ward'
-ON CONFLICT (name, lc4_id) DO NOTHING;
+-- ============================================================
+-- OPTIONAL INDEXES (for performance)
+-- ============================================================
+CREATE INDEX idx_subregion_region_id ON subregion(region_id);
+CREATE INDEX idx_district_subregion_id ON district(subregion_id);
+CREATE INDEX idx_lc3_district_id ON admin_unit_lc3(district_id);
+CREATE INDEX idx_lc4_lc3_id ON admin_unit_lc4(lc3_id);
+CREATE INDEX idx_lc1_lc4_id ON admin_unit_lc1(lc4_id);
 
 -- ============================================================
 -- DONE
 -- ============================================================
 SELECT '✅ Uganda location hierarchy loaded successfully.' AS status;
+
+COMMIT;
