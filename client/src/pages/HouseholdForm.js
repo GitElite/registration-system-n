@@ -260,7 +260,7 @@ export default function HouseholdForm({ token }) {
           <small className="error">{errors.agreed_to_credit_terms}</small>
         )}
 
-        <button type="submit" className="primary">
+        <button type="submit" className="primary" onClick={handleSubmit}>
           Submit Household
         </button>
       </form>

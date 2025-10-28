@@ -4,7 +4,7 @@ import HouseholdList from "./pages/HouseholdList";
 import LocationSelection from "./pages/LocationSelection";
 import ThemeToggle from "./components/ThemeToggle";
 
-const API = "http://localhost:5000/api/auth";
+const API = `${process.env.REACT_APP_API_URL}/api/auth`;
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
