@@ -5,6 +5,7 @@ dotenv.config();
 const { Pool } = pkg;
 
 const pool = new Pool({
+  ssl: { rejectUnauthorized: false }, // required by Render
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
