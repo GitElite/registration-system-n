@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API = "http://localhost:5000/api";
+const API = `${process.env.REACT_APP_API_URL}/api`;
 
 function HouseholdList({ token }) {
   const [households, setHouseholds] = useState([]);

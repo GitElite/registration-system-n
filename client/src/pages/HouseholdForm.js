@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "../styles/AppTheme.css";
 import { useEffect } from "react";
 
-const API = "http://localhost:5000/api/households";
+const API = `${process.env.REACT_APP_API_URL}/api/households`;
 
 export default function HouseholdForm({ token }) {
   const locationContext = JSON.parse(localStorage.getItem("locationContext") || "{}");

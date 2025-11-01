@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/AppTheme.css";
 
-const API = "http://localhost:5000/api/locations";
+const API = `${process.env.REACT_APP_API_URL}/api/locations`;
 
 export default function LocationSelection({ token, onProceed }) {
   const [region, setRegion] = useState("");
