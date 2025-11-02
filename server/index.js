@@ -8,26 +8,30 @@ import householdRoutes from "./routes/householdRoutes.js";
 dotenv.config();
 const app = express();
 
-/* ✅ CORS setup — single unified block */
+/* ✅ CORS configuration (Render + Vercel compatible) */
 const allowedOrigins = [
-  "http://localhost:3000",                  // local dev
-  "https://registration-system-n.vercel.app" // deployed frontend
+  "http://localhost:3000",                 // Local dev
+  "https://registration-system-n.vercel.app" // Live frontend
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like curl, Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
+
+// ✅ Apply global CORS and preflight handler
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 /* ✅ Middleware */
 app.use(express.json());
@@ -40,7 +44,7 @@ app.use("/api/households", householdRoutes);
 
 /* ✅ Health check */
 app.get("/", (req, res) => {
-  res.json({ status: "✅ Registration System API running..." });
+  res.status(200).json({ message: "✅ Registration System API running..." });
 });
 
 /* ✅ Start server */
