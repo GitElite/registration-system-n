@@ -5,7 +5,7 @@ import { authenticateToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // === Create Household ===
-router.post("/households", authenticateToken, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const {
       head_name,
@@ -83,7 +83,7 @@ router.post("/households", authenticateToken, async (req, res) => {
 });
 
 // === Get Households by Status ===
-router.get("/households", authenticateToken, async (req, res) => {
+router.get("/", authenticateToken, async (req, res) => {
   try {
     const { status } = req.query;
     const query = status
@@ -98,7 +98,7 @@ router.get("/households", authenticateToken, async (req, res) => {
 });
 
 // === Approve or Reject ===
-router.put("/households/:id", authenticateToken, async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { registration_status, rejection_reason } = req.body;
