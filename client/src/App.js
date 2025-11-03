@@ -12,6 +12,13 @@ function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [msg, setMsg] = useState("");
+  const [popup, setPopup] = useState({ message: "", type: "" });
+
+  const showPopup = (message, type = "success") => {
+    setPopup({ message, type });
+    setTimeout(() => setPopup({ message: "", type: "" }), 3000);
+  };
+
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,18 +26,34 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = isLogin ? `${API}/login` : `${API}/register`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setMsg(data.message || data.error);
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-      setToken(data.token);
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        // ✅ login success
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        showPopup("✅ Login successful!", "success");
+      } else if (res.ok && !isLogin) {
+        // ✅ registration success
+        showPopup("✅ Registration successful! You can now log in.", "success");
+        setTimeout(() => setIsLogin(true), 2000); // switch to login view
+      } else {
+        // ❌ server error
+        showPopup(data.error || "Something went wrong.", "error");
+      }
+    } catch {
+      showPopup("⚠️ Network error. Try again later.", "error");
     }
   };
+
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -152,6 +175,26 @@ if (!token)
   // ======== MAIN APP VIEW ========
   return (
     <div>
+      {popup.message && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            background: popup.type === "success" ? "#27ae60" : "#e74c3c",
+            color: "#fff",
+            padding: "12px 18px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+            zIndex: 9999,
+            transition: "all 0.3s ease-in-out",
+            opacity: popup.message ? 1 : 0,
+          }}
+        >
+          {popup.message}
+        </div>
+      )}
+
       {/* Navbar */}
       <nav
         style={{

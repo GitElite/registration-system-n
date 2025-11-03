@@ -31,7 +31,7 @@ const corsOptions = {
 
 // ✅ Apply global CORS and preflight handler
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("/*", cors(corsOptions));
 
 /* ✅ Middleware */
 app.use(express.json());

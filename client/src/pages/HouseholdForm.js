@@ -8,6 +8,13 @@ export default function HouseholdForm({ token }) {
   const locationContext = JSON.parse(localStorage.getItem("locationContext") || "{}");
   const [msg, setMsg] = useState("");
   const [errors, setErrors] = useState({});
+  const [popup, setPopup] = useState({ message: "", type: "" });
+
+  const showPopup = (message, type = "success") => {
+    setPopup({ message, type });
+    setTimeout(() => setPopup({ message: "", type: "" }), 3000);
+  };
+
   const [form, setForm] = useState({
     head_name: "",
     primary_phone: "",
@@ -135,6 +142,26 @@ export default function HouseholdForm({ token }) {
 
   return (
     <div className="form-card">
+      {popup.message && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            background: popup.type === "success" ? "#27ae60" : "#e74c3c",
+            color: "#fff",
+            padding: "12px 18px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+            zIndex: 9999,
+            transition: "all 0.3s ease-in-out",
+            opacity: popup.message ? 1 : 0,
+          }}
+        >
+          {popup.message}
+        </div>
+      )}
+
 
       <h2 className="form-title">🏠 Household Registration</h2>
       <p>
