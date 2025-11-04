@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import HouseholdForm from "./pages/HouseholdForm";
 import HouseholdList from "./pages/HouseholdList";
 import LocationSelection from "./pages/LocationSelection";
@@ -11,9 +11,9 @@ function App() {
   const [view, setView] = useState("location");
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
-  const [msg, setMsg] = useState("");
   const [popup, setPopup] = useState({ message: "", type: "" });
 
+  // ✅ Global auth check — ensures user always returns to login if not authenticated
   useEffect(() => {
     if (!token) {
       localStorage.removeItem("token");
@@ -26,7 +26,6 @@ function App() {
     setPopup({ message, type });
     setTimeout(() => setPopup({ message: "", type: "" }), 3000);
   };
-
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -45,16 +44,16 @@ function App() {
       const data = await res.json();
 
       if (res.ok && data.token) {
-        // ✅ login success
+        // ✅ Login success
         localStorage.setItem("token", data.token);
         setToken(data.token);
         showPopup("✅ Login successful!", "success");
       } else if (res.ok && !isLogin) {
-        // ✅ registration success
+        // ✅ Registration success
         showPopup("✅ Registration successful! You can now log in.", "success");
-        setTimeout(() => setIsLogin(true), 2000); // switch to login view
+        setTimeout(() => setIsLogin(true), 2000);
       } else {
-        // ❌ server error
+        // ❌ Validation or server error
         showPopup(data.error || "Something went wrong.", "error");
       }
     } catch {
@@ -62,127 +61,140 @@ function App() {
     }
   };
 
-
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
+    setIsLogin(true);
+    setView("login");
   };
 
   // ======== LOGIN / REGISTER VIEW ========
-if (!token)
-  return (
-    <div
-      className="form-card"
-      style={{
-        maxWidth: "420px",
-        margin: "80px auto",
-        padding: "30px 36px",
-        textAlign: "center",
-      }}
-    >
-      <h2
-        className="form-title"
+  if (!token)
+    return (
+      <div
+        className="form-card"
         style={{
-          fontSize: "22px",
-          marginBottom: "18px",
-          borderBottom: "none",
-          color: "var(--accent)",
+          maxWidth: "420px",
+          margin: "80px auto",
+          padding: "30px 36px",
+          textAlign: "center",
         }}
       >
-        {isLogin ? "Welcome Back 👋" : "Create Account"}
-      </h2>
-
-      {msg && (
-        <div
+        <h2
+          className="form-title"
           style={{
-            color: msg.startsWith("✅") ? "green" : "red",
-            marginBottom: "10px",
-            fontWeight: "500",
+            fontSize: "22px",
+            marginBottom: "18px",
+            borderBottom: "none",
+            color: "var(--accent)",
           }}
         >
-          {msg}
-        </div>
-      )}
+          {isLogin ? "Welcome Back 👋" : "Create Account"}
+        </h2>
 
-      <form onSubmit={handleSubmit} style={{ textAlign: "left" }}>
-        {!isLogin && (
-          <>
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="full_name"
-              placeholder="e.g. Jane Doe"
-              value={form.full_name}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
+        <form onSubmit={handleSubmit} style={{ textAlign: "left" }}>
+          {!isLogin && (
+            <>
+              <label>Full Name</label>
+              <input
+                type="text"
+                name="full_name"
+                placeholder="e.g. Jane Doe"
+                value={form.full_name}
+                onChange={handleChange}
+                required
+              />
+            </>
+          )}
 
-        <label>Email</label>
-        <input
-          type="email"
-          name="email"
-          placeholder="e.g. jane@example.com"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="e.g. jane@example.com"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
 
-        <label>Password</label>
-        <input
-          type="password"
-          name="password"
-          placeholder="••••••••"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+
+          <button
+            type="submit"
+            className="primary"
+            style={{
+              marginTop: "8px",
+              width: "100%",
+              padding: "10px 0",
+              fontSize: "15px",
+            }}
+          >
+            {isLogin ? "Login" : "Register"}
+          </button>
+        </form>
 
         <button
-          type="submit"
-          className="primary"
+          className="secondary"
           style={{
-            marginTop: "8px",
             width: "100%",
-            padding: "10px 0",
-            fontSize: "15px",
+            marginTop: "12px",
+            fontSize: "14px",
+            padding: "8px 0",
+          }}
+          onClick={() => setIsLogin(!isLogin)}
+        >
+          {isLogin
+            ? "Need an account? Create one"
+            : "Already registered? Log in"}
+        </button>
+
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "22px",
+            fontSize: "12px",
+            color: "var(--label)",
           }}
         >
-          {isLogin ? "Login" : "Register"}
-        </button>
-      </form>
+          Powered by <strong>Orchard Links</strong>
+        </div>
 
-      <button
-        className="secondary"
-        style={{
-          width: "100%",
-          marginTop: "12px",
-          fontSize: "14px",
-          padding: "8px 0",
-        }}
-        onClick={() => setIsLogin(!isLogin)}
-      >
-        {isLogin ? "Need an account? Create one" : "Already registered? Log in"}
-      </button>
-
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "22px",
-          fontSize: "12px",
-          color: "var(--label)",
-        }}
-      >
-        Powered by <strong>Orchard Links</strong>
+        {/* ✅ Toast popup */}
+        {popup.message && (
+          <div
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              background:
+                popup.type === "success" ? "#27ae60" : "#e74c3c",
+              color: "#fff",
+              padding: "12px 18px",
+              borderRadius: "8px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+              zIndex: 9999,
+              transition: "all 0.3s ease-in-out",
+              opacity: popup.message ? 1 : 0,
+            }}
+          >
+            {popup.message}
+          </div>
+        )}
       </div>
-    </div>
-);
-
+    );
 
   // ======== MAIN APP VIEW ========
   return (
     <div>
+      {/* ✅ Toast popup (global) */}
       {popup.message && (
         <div
           style={{
