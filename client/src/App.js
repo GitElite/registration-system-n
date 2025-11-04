@@ -14,6 +14,14 @@ function App() {
   const [msg, setMsg] = useState("");
   const [popup, setPopup] = useState({ message: "", type: "" });
 
+  useEffect(() => {
+    if (!token) {
+      localStorage.removeItem("token");
+      setView("login");
+      setIsLogin(true);
+    }
+  }, [token]);
+
   const showPopup = (message, type = "success") => {
     setPopup({ message, type });
     setTimeout(() => setPopup({ message: "", type: "" }), 3000);

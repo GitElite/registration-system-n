@@ -94,7 +94,8 @@ export default function HouseholdForm({ token }) {
 
       const data = await res.json();
       if (res.ok) {
-        setMsg("✅ Household registered successfully!");
+        showPopup("✅ Household registered successfully!", "success");
+        setMsg("");
         setErrors({});
         setForm({
           head_name: "",
@@ -114,31 +115,35 @@ export default function HouseholdForm({ token }) {
           bank_account_number: "",
           agreed_to_credit_terms: false,
         });
-      } else setMsg(data.error || "Submission failed.");
+      } else {
+          showPopup(data.error || "Submission failed.", "error");
+        }
     } catch {
-      setMsg("⚠️ Network error. Try again later.");
+      showPopup("⚠️ Network error. Try again later.", "error");
     }
   };
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setForm((prev) => ({
-            ...prev,
-            gps_latitude: position.coords.latitude.toFixed(6),
-            gps_longitude: position.coords.longitude.toFixed(6),
-          }));
-        },
-        (error) => {
-          console.warn("GPS access denied or unavailable:", error.message);
-        }
-      );
-    } else {
+    if (!("geolocation" in navigator)) {
       console.warn("Geolocation not supported on this device.");
+      return;
     }
-  }, []);
 
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((prev) => ({
+          ...prev,
+          gps_latitude: position.coords.latitude.toFixed(6),
+          gps_longitude: position.coords.longitude.toFixed(6),
+        }));
+      },
+      (error) => {
+        console.warn("GPS access denied or unavailable:", error.message);
+        alert("⚠️ Please enable location access for automatic GPS detection.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, []);
 
   return (
     <div className="form-card">
@@ -197,7 +202,14 @@ export default function HouseholdForm({ token }) {
         {errors.gps_latitude && <small className="error">{errors.gps_latitude}</small>}
 
         <label>Land Size (acres) *</label>
-        <input type="number" name="land_size" value={form.land_size} onChange={handleChange} />
+        <input
+          type="number"
+          name="land_size"
+          value={form.land_size}
+          min="0.01"
+          step="0.01"
+          onChange={handleChange}
+        />
         {errors.land_size && <small className="error">{errors.land_size}</small>}
 
         <label>Plot Characteristics *</label>
@@ -219,11 +231,27 @@ export default function HouseholdForm({ token }) {
 
 
         <label>Number of Household Members *</label>
-        <input type="number" name="num_members" value={form.num_members} onChange={handleChange} />
+        <input
+          type="number"
+          name="num_members"
+          value={form.num_members}
+          min="1"
+          step="1"
+          onChange={handleChange}
+        />
         {errors.num_members && <small className="error">{errors.num_members}</small>}
 
         <label>Primary Income Source *</label>
-        <input name="primary_income" value={form.primary_income} onChange={handleChange} />
+        <select name="primary_income" value={form.primary_income} onChange={handleChange}>
+          <option value="">Select income source</option>
+          <option value="Crop Farming">Crop Farming</option>
+          <option value="Livestock">Livestock</option>
+          <option value="Trade / Business">Trade / Business</option>
+          <option value="Salaried Employment">Salaried Employment</option>
+          <option value="Casual Labour">Casual Labour</option>
+          <option value="Remittances">Remittances</option>
+          <option value="Other">Other</option>
+        </select>
         {errors.primary_income && <small className="error">{errors.primary_income}</small>}
 
         <div className="checkbox-row">
@@ -236,9 +264,17 @@ export default function HouseholdForm({ token }) {
           />
         </div>
 
-
         <label>Water Source *</label>
-        <input name="water_source" value={form.water_source} onChange={handleChange} />
+        <select name="water_source" value={form.water_source} onChange={handleChange}>
+          <option value="">Select water source</option>
+          <option value="Borehole">Borehole</option>
+          <option value="Well">Well</option>
+          <option value="River / Stream">River / Stream</option>
+          <option value="Rainwater Harvesting">Rainwater Harvesting</option>
+          <option value="Tap / Piped Water">Tap / Piped Water</option>
+          <option value="Community Tank">Community Tank</option>
+          <option value="Other">Other</option>
+        </select>
         {errors.water_source && <small className="error">{errors.water_source}</small>}
 
         <label>Payment Method *</label>
