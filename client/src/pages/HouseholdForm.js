@@ -177,11 +177,11 @@ export default function HouseholdForm({ token }) {
       {msg && <div className={msg.startsWith("✅") ? "success" : "warning"}>{msg}</div>}
 
       <form onSubmit={handleSubmit}>
-        <label>Head of Household *</label>
+        <label className="required">Head of Household</label>
         <input name="head_name" value={form.head_name} onChange={handleChange} />
         {errors.head_name && <small className="error">{errors.head_name}</small>}
 
-        <label>Primary Phone *</label>
+        <label className="required">Primary Phone</label>
         <input name="primary_phone" value={form.primary_phone} onChange={handleChange} />
         {errors.primary_phone && <small className="error">{errors.primary_phone}</small>}
 
@@ -191,17 +191,17 @@ export default function HouseholdForm({ token }) {
 
         <div style={{ display: "flex", gap: "10px" }}>
           <div style={{ flex: 1 }}>
-            <label>GPS Latitude *</label>
+            <label className="required">GPS Latitude</label>
             <input name="gps_latitude" value={form.gps_latitude} onChange={handleChange} />
           </div>
           <div style={{ flex: 1 }}>
-            <label>GPS Longitude *</label>
+            <label className="required">GPS Longitude</label>
             <input name="gps_longitude" value={form.gps_longitude} onChange={handleChange} />
           </div>
         </div>
         {errors.gps_latitude && <small className="error">{errors.gps_latitude}</small>}
 
-        <label>Land Size (acres) *</label>
+        <label className="required">Land Size (acres)</label>
         <input
           type="number"
           name="land_size"
@@ -212,7 +212,7 @@ export default function HouseholdForm({ token }) {
         />
         {errors.land_size && <small className="error">{errors.land_size}</small>}
 
-        <label>Plot Characteristics *</label>
+        <label className="required">Plot Characteristics</label>
         <select
           name="plot_characteristics"
           value={form.plot_characteristics}
@@ -230,7 +230,7 @@ export default function HouseholdForm({ token }) {
         </select>
 
 
-        <label>Number of Household Members *</label>
+        <label className="required">Number of Household Members</label>
         <input
           type="number"
           name="num_members"
@@ -241,7 +241,7 @@ export default function HouseholdForm({ token }) {
         />
         {errors.num_members && <small className="error">{errors.num_members}</small>}
 
-        <label>Primary Income Source *</label>
+        <label className="required">Primary Income Source</label>
         <select name="primary_income" value={form.primary_income} onChange={handleChange}>
           <option value="">Select income source</option>
           <option value="Crop Farming">Crop Farming</option>
@@ -264,7 +264,7 @@ export default function HouseholdForm({ token }) {
           />
         </div>
 
-        <label>Water Source *</label>
+        <label className="required">Water Source</label>
         <select name="water_source" value={form.water_source} onChange={handleChange}>
           <option value="">Select water source</option>
           <option value="Borehole">Borehole</option>
@@ -277,7 +277,7 @@ export default function HouseholdForm({ token }) {
         </select>
         {errors.water_source && <small className="error">{errors.water_source}</small>}
 
-        <label>Payment Method *</label>
+        <label className="required">Payment Method</label>
         <select name="payment_method" value={form.payment_method} onChange={handleChange}>
           <option value="">Select</option>
           <option value="MobileMoney">Mobile Money</option>
@@ -287,7 +287,7 @@ export default function HouseholdForm({ token }) {
 
         {form.payment_method === "MobileMoney" && (
           <>
-            <label>Mobile Money Number *</label>
+            <label className="required">Mobile Money Number</label>
             <input name="mobile_money_number" value={form.mobile_money_number} onChange={handleChange} />
             {errors.mobile_money_number && (
               <small className="error">{errors.mobile_money_number}</small>
@@ -297,11 +297,11 @@ export default function HouseholdForm({ token }) {
 
         {form.payment_method === "Bank" && (
           <>
-            <label>Bank Name *</label>
+            <label className="required">Bank Name</label>
             <input name="bank_name" value={form.bank_name} onChange={handleChange} />
             {errors.bank_name && <small className="error">{errors.bank_name}</small>}
 
-            <label>Account Number *</label>
+            <label className="required">Account Number</label>
             <input name="bank_account_number" value={form.bank_account_number} onChange={handleChange} />
             {errors.bank_account_number && (
               <small className="error">{errors.bank_account_number}</small>
@@ -310,7 +310,7 @@ export default function HouseholdForm({ token }) {
         )}
 
         <div className="checkbox-row">
-          <label>I agree to credit terms</label>
+          <label className="required">I agree to credit terms</label>
           <input
             type="checkbox"
             name="agreed_to_credit_terms"

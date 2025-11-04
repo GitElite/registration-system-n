@@ -165,8 +165,9 @@ button.secondary:hover {
   display: block;
 }
 
-label::after {
+.required::after {
   content: " *";
   color: #e74c3c;
   font-weight: bold;
 }
+
