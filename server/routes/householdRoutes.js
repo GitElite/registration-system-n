@@ -98,21 +98,81 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 // === Approve or Reject ===
+// === Update Household (Edit) ===
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { registration_status, rejection_reason } = req.body;
+    const {
+      head_name,
+      primary_phone,
+      alternate_contact,
+      gps_latitude,
+      gps_longitude,
+      land_size,
+      plot_characteristics,
+      num_members,
+      primary_income,
+      past_orchard_experience,
+      water_source,
+      payment_method,
+      mobile_money_number,
+      bank_name,
+      bank_account_number,
+      agreed_to_credit_terms,
+      registration_status,
+      rejection_reason
+    } = req.body;
 
-    await pool.query(
-      `UPDATE household
-       SET registration_status=$1, rejection_reason=$2
-       WHERE household_id=$3`,
-      [registration_status, rejection_reason, id]
+    const result = await pool.query(
+      `UPDATE household SET
+        head_name = COALESCE($1, head_name),
+        primary_phone = COALESCE($2, primary_phone),
+        alternate_contact = COALESCE($3, alternate_contact),
+        gps_latitude = COALESCE($4, gps_latitude),
+        gps_longitude = COALESCE($5, gps_longitude),
+        land_size = COALESCE($6, land_size),
+        plot_characteristics = COALESCE($7, plot_characteristics),
+        num_members = COALESCE($8, num_members),
+        primary_income = COALESCE($9, primary_income),
+        past_orchard_experience = COALESCE($10, past_orchard_experience),
+        water_source = COALESCE($11, water_source),
+        payment_method = COALESCE($12, payment_method),
+        mobile_money_number = COALESCE($13, mobile_money_number),
+        bank_name = COALESCE($14, bank_name),
+        bank_account_number = COALESCE($15, bank_account_number),
+        agreed_to_credit_terms = COALESCE($16, agreed_to_credit_terms),
+        registration_status = COALESCE($17, registration_status),
+        rejection_reason = COALESCE($18, rejection_reason)
+      WHERE household_id = $19`,
+      [
+        head_name,
+        primary_phone,
+        alternate_contact,
+        gps_latitude,
+        gps_longitude,
+        land_size,
+        plot_characteristics,
+        num_members,
+        primary_income,
+        past_orchard_experience,
+        water_source,
+        payment_method,
+        mobile_money_number,
+        bank_name,
+        bank_account_number,
+        agreed_to_credit_terms,
+        registration_status,
+        rejection_reason,
+        id
+      ]
     );
-    res.json({ message: `Household ${registration_status}` });
+
+    res.json({ message: "✅ Household updated successfully!" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 export default router;
