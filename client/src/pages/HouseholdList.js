@@ -340,7 +340,7 @@ export default function HouseholdList({ token }) {
         >
           <label>Head of Household</label>
           <input
-            value={editModal.data.head_name}
+            value={editModal.data.head_name || ""}
             onChange={(e) =>
               setEditModal({
                 ...editModal,
@@ -348,9 +348,10 @@ export default function HouseholdList({ token }) {
               })
             }
           />
-          <label>Phone</label>
+
+          <label>Primary Phone</label>
           <input
-            value={editModal.data.primary_phone}
+            value={editModal.data.primary_phone || ""}
             onChange={(e) =>
               setEditModal({
                 ...editModal,
@@ -358,10 +359,44 @@ export default function HouseholdList({ token }) {
               })
             }
           />
-          <label>Land Size</label>
+
+          <label>Alternate Contact</label>
+          <input
+            value={editModal.data.alternate_contact || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, alternate_contact: e.target.value },
+              })
+            }
+          />
+
+          <label>GPS Latitude</label>
+          <input
+            value={editModal.data.gps_latitude || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, gps_latitude: e.target.value },
+              })
+            }
+          />
+
+          <label>GPS Longitude</label>
+          <input
+            value={editModal.data.gps_longitude || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, gps_longitude: e.target.value },
+              })
+            }
+          />
+
+          <label>Land Size (acres)</label>
           <input
             type="number"
-            value={editModal.data.land_size}
+            value={editModal.data.land_size || ""}
             onChange={(e) =>
               setEditModal({
                 ...editModal,
@@ -369,20 +404,135 @@ export default function HouseholdList({ token }) {
               })
             }
           />
-        </Modal>
-      )}
 
-      {/* Delete Modal */}
-      {deleteModal.open && (
-        <Modal
-          title="Delete Household"
-          onCancel={() => setDeleteModal({ open: false, id: null })}
-          onConfirm={() => {
-            deleteHousehold(deleteModal.id);
-            setDeleteModal({ open: false, id: null });
-          }}
-        >
-          <p>Are you sure you want to delete this household record?</p>
+          <label>Plot Characteristics</label>
+          <select
+            value={editModal.data.plot_characteristics || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, plot_characteristics: e.target.value },
+              })
+            }
+          >
+            <option value="">Select</option>
+            <option>Flat Land</option>
+            <option>Gentle Slope</option>
+            <option>Steep Slope</option>
+            <option>Valley / Wetland Edge</option>
+            <option>Rocky Terrain</option>
+            <option>Clay Soil</option>
+            <option>Sandy Soil</option>
+            <option>Loam Soil</option>
+          </select>
+
+          <label>Household Members</label>
+          <input
+            type="number"
+            value={editModal.data.num_members || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, num_members: e.target.value },
+              })
+            }
+          />
+
+          <label>Primary Income</label>
+          <select
+            value={editModal.data.primary_income || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, primary_income: e.target.value },
+              })
+            }
+          >
+            <option value="">Select income source</option>
+            <option>Crop Farming</option>
+            <option>Livestock</option>
+            <option>Trade / Business</option>
+            <option>Salaried Employment</option>
+            <option>Casual Labour</option>
+            <option>Remittances</option>
+            <option>Other</option>
+          </select>
+
+          <label>Water Source</label>
+          <select
+            value={editModal.data.water_source || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, water_source: e.target.value },
+              })
+            }
+          >
+            <option value="">Select water source</option>
+            <option>Borehole</option>
+            <option>Well</option>
+            <option>River / Stream</option>
+            <option>Rainwater Harvesting</option>
+            <option>Tap / Piped Water</option>
+            <option>Community Tank</option>
+            <option>Other</option>
+          </select>
+
+          <label>Payment Method</label>
+          <select
+            value={editModal.data.payment_method || ""}
+            onChange={(e) =>
+              setEditModal({
+                ...editModal,
+                data: { ...editModal.data, payment_method: e.target.value },
+              })
+            }
+          >
+            <option value="">Select</option>
+            <option value="MobileMoney">Mobile Money</option>
+            <option value="Bank">Bank</option>
+          </select>
+
+          {editModal.data.payment_method === "MobileMoney" && (
+            <>
+              <label>Mobile Money Number</label>
+              <input
+                value={editModal.data.mobile_money_number || ""}
+                onChange={(e) =>
+                  setEditModal({
+                    ...editModal,
+                    data: { ...editModal.data, mobile_money_number: e.target.value },
+                  })
+                }
+              />
+            </>
+          )}
+
+          {editModal.data.payment_method === "Bank" && (
+            <>
+              <label>Bank Name</label>
+              <input
+                value={editModal.data.bank_name || ""}
+                onChange={(e) =>
+                  setEditModal({
+                    ...editModal,
+                    data: { ...editModal.data, bank_name: e.target.value },
+                  })
+                }
+              />
+
+              <label>Account Number</label>
+              <input
+                value={editModal.data.bank_account_number || ""}
+                onChange={(e) =>
+                  setEditModal({
+                    ...editModal,
+                    data: { ...editModal.data, bank_account_number: e.target.value },
+                  })
+                }
+              />
+            </>
+          )}
         </Modal>
       )}
     </div>
